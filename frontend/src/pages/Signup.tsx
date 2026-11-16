@@ -1,0 +1,128 @@
+import { useState, type FormEvent } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { signupUser } from '../services/authService'
+
+function Signup() {
+  // Password visibility
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Signup error message
+  const [error, setError] = useState('')
+
+  const navigate = useNavigate()
+
+  // Handle signup form submission
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError('')
+
+    // Get values from the form
+    const formData = new FormData(event.currentTarget)
+
+    const name = String(formData.get('name') || '')
+    const email = String(formData.get('email') || '')
+    const password = String(formData.get('password') || '')
+    const confirmPassword = String(formData.get('confirmPassword') || '')
+
+    // Check whether passwords match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    // Send signup details to the backend
+    try {
+      await signupUser({ name, email, password })
+      navigate('/login')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Signup failed')
+    }
+  }
+
+  // Signup form
+  return (
+    <form className="auth-form" onSubmit={handleSubmit}>
+      {/* Full name field */}
+      <div className="form-group">
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Full Name"
+          aria-label="Full Name"
+          required
+        />
+      </div>
+
+      {/* Email field */}
+      <div className="form-group">
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Email Address"
+          aria-label="Email Address"
+          required
+        />
+      </div>
+
+      {/* Password field */}
+      <div className="form-group">
+        <div className="password-input-wrapper">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            id="password"
+            name="password"
+            placeholder="Password"
+            aria-label="Password"
+            required
+          />
+
+          <button
+            type="button"
+            className="password-toggle"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Confirm password field */}
+      <div className="form-group">
+        <div className="password-input-wrapper">
+          <input
+            type={showConfirmPassword ? 'text' : 'password'}
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            aria-label="Confirm Password"
+            required
+          />
+
+          <button
+            type="button"
+            className="password-toggle"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+          >
+            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Signup error message */}
+      {error && <p className="error-message">{error}</p>}
+
+      {/* Signup button */}
+      <button type="submit" className="auth-button">
+        Signup
+      </button>
+    </form>
+  )
+}
+
+export default Signup
