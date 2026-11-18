@@ -73,25 +73,31 @@ export const recordFailedLogin = async (ip: string) => {
        VALUES (?, 1, ?, NULL)
        ON DUPLICATE KEY UPDATE
        blocked_until = CASE
+         WHEN blocked_until IS NOT NULL AND blocked_until > ? THEN blocked_until
          WHEN first_attempt_at <= ? THEN NULL
          WHEN failed_attempts + 1 >= ? THEN ?
          ELSE blocked_until
        END,
        failed_attempts = CASE
-         WHEN first_attempt_at <= ? THEN 1
+         WHEN (blocked_until IS NULL OR blocked_until <= ?)
+           AND first_attempt_at <= ? THEN 1
          ELSE failed_attempts + 1
        END,
        first_attempt_at = CASE
-         WHEN first_attempt_at <= ? THEN ?
+         WHEN (blocked_until IS NULL OR blocked_until <= ?)
+           AND first_attempt_at <= ? THEN ?
          ELSE first_attempt_at
        END`,
       [
         ip,
         now,
+        now,
         windowStart,
         MAX_ATTEMPTS,
         blockedUntil,
+        now,
         windowStart,
+        now,
         windowStart,
         now,
       ],
