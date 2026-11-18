@@ -1,0 +1,174 @@
+
+/* Center the login and signup form */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+/* Form card styling */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 35px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+/* Form heading */
+.auth-title {
+  margin-bottom: 25px;
+  color: #222;
+  text-align: center;
+  font-size: 28px;
+}
+
+/* Login and signup tabs */
+.auth-tabs {
+  position: relative;
+  display: flex;
+  padding: 5px;
+  margin-bottom: 25px;
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+/* Slider for the active tab */
+.auth-tab-slider {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: calc(50% - 5px);
+  height: calc(100% - 10px);
+  background: #2563eb;
+  border-radius: 6px;
+  transition: transform 0.35s ease;
+}
+
+.auth-tab-slider.signup-active {
+  transform: translateX(100%);
+}
+
+/* Tab links */
+.auth-tab {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 11px;
+  text-align: center;
+  text-decoration: none;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.auth-tab.active {
+  color: white;
+}
+
+/* Form layout */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Input fields */
+.form-group input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* Password field and eye icon */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  padding-right: 45px;
+}
+
+/* Show and hide password button */
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+}
+
+/* Forgot password link */
+.forgot-password {
+  margin-top: -8px;
+  text-align: right;
+}
+
+.forgot-password a {
+  color: #2563eb;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+/* Login and signup buttons */
+.auth-button {
+  width: 100%;
+  padding: 13px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.auth-button:hover {
+  background: #1d4ed8;
+}
+
+/* Card padding on small screens */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 25px 20px;
+  }
+}
+
+/* Form error message */
+.error-message {
+  margin: -8px 0 0;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: left;
+}
+
+/* Successful login message */
+.success-message {
+  margin: -8px 0 0;
+  color: #16a34a;
+  font-size: 14px;
+  text-align: left;
+}
