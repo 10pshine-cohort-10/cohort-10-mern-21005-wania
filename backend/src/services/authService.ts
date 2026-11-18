@@ -4,6 +4,14 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2'
 import db from '../config/database'
 import JWT_SECRET from '../config/jwtConfig'
 
+// Expected authentication errors
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AuthError'
+  }
+}
+
 // Signup form data
 type SignupData = {
   name: string
@@ -30,63 +38,93 @@ const dummyPasswordHash = bcrypt.hashSync('dummy-password', 10)
 
 // Register a new user
 export const signupUser = async ({ name, email, password }: SignupData) => {
-  // Check whether the email is already registered
-  const [existingUsers] = await db.execute<UserRow[]>(
-    'SELECT id, name, email, password FROM users WHERE email = ?',
-    [email],
-  )
+  try {
+    // Check whether the email is already registered
+    const [existingUsers] = await db.execute<UserRow[]>(
+      'SELECT id, name, email, password FROM users WHERE email = ?',
+      [email],
+    )
 
-  if (existingUsers.length > 0) {
-    throw new Error('Email is already registered')
-  }
+    if (existingUsers.length > 0) {
+      throw new AuthError('Email is already registered')
+    }
 
-  // Hash the password before saving it
-  const hashedPassword = await bcrypt.hash(password, 10)
+    // Hash the password before saving it
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-  // Save the new user in the database
-  const [result] = await db.execute<ResultSetHeader>(
-    'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-    [name, email, hashedPassword],
-  )
+    // Save the new user in the database
+    const [result] = await db.execute<ResultSetHeader>(
+      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+      [name, email, hashedPassword],
+    )
 
-  return {
-    id: result.insertId,
-    name,
-    email,
+    return {
+      id: result.insertId,
+      name,
+      email,
+    }
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error
+    }
+
+    // Handle duplicate emails when two signups happen together
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'ER_DUP_ENTRY'
+    ) {
+      throw new AuthError('Email is already registered')
+    }
+
+    if (error instanceof Error) {
+      throw error
+    }
+
+    throw new Error('Signup failed')
   }
 }
 
 // Log in an existing user
 export const loginUser = async ({ email, password }: LoginData) => {
-  // Find the user by email
-  const [users] = await db.execute<UserRow[]>(
-    'SELECT id, name, email, password FROM users WHERE email = ?',
-    [email],
-  )
+  try {
+    // Find the user by email
+    const [users] = await db.execute<UserRow[]>(
+      'SELECT id, name, email, password FROM users WHERE email = ?',
+      [email],
+    )
 
-  const user = users[0]
+    const user = users[0]
 
-  // Compare against the real hash or a dummy hash
-  const passwordHash = user?.password ?? dummyPasswordHash
-  const isPasswordValid = await bcrypt.compare(password, passwordHash)
+    // Compare against the real hash or a dummy hash
+    const passwordHash = user?.password ?? dummyPasswordHash
+    const isPasswordValid = await bcrypt.compare(password, passwordHash)
 
-  if (!user || !isPasswordValid) {
-    throw new Error('Invalid email or password')
-  }
+    if (!user || !isPasswordValid) {
+      throw new AuthError('Invalid email or password')
+    }
 
-  // Create a login token
-  const token = jwt.sign(
-    { userId: user.id },
-    JWT_SECRET,
-    { expiresIn: '1d' },
-  )
+    // Create a login token
+    const token = jwt.sign(
+      { userId: user.id },
+      JWT_SECRET,
+      { expiresIn: '1d' },
+    )
 
-  return {
-    token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error
+    }
+
+    throw new Error('Login failed')
   }
 }

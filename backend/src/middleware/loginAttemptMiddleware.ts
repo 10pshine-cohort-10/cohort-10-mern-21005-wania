@@ -62,44 +62,45 @@ export const checkLoginAttempts = async (
 
 // Record an unsuccessful login
 export const recordFailedLogin = async (ip: string) => {
-  const now = Date.now()
+  try {
+    const now = Date.now()
+    const windowStart = now - ATTEMPT_WINDOW
+    const blockedUntil = now + BLOCK_DURATION
 
-  const [rows] = await db.execute<LoginAttemptRow[]>(
-    'SELECT failed_attempts, first_attempt_at, blocked_until FROM login_attempts WHERE ip_address = ?',
-    [ip],
-  )
-
-  const attempt = rows[0]
-
-  if (!attempt || now - Number(attempt.first_attempt_at) >= ATTEMPT_WINDOW) {
     await db.execute(
       `INSERT INTO login_attempts
        (ip_address, failed_attempts, first_attempt_at, blocked_until)
        VALUES (?, 1, ?, NULL)
        ON DUPLICATE KEY UPDATE
-       failed_attempts = 1,
-       first_attempt_at = VALUES(first_attempt_at),
-       blocked_until = NULL`,
-      [ip, now],
+       blocked_until = CASE
+         WHEN first_attempt_at <= ? THEN NULL
+         WHEN failed_attempts + 1 >= ? THEN ?
+         ELSE blocked_until
+       END,
+       failed_attempts = CASE
+         WHEN first_attempt_at <= ? THEN 1
+         ELSE failed_attempts + 1
+       END,
+       first_attempt_at = CASE
+         WHEN first_attempt_at <= ? THEN ?
+         ELSE first_attempt_at
+       END`,
+      [
+        ip,
+        now,
+        windowStart,
+        MAX_ATTEMPTS,
+        blockedUntil,
+        windowStart,
+        windowStart,
+        now,
+      ],
     )
-    return
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error
+    }
+
+    throw new Error('Unable to record failed login attempt')
   }
-
-  const failedAttempts = Number(attempt.failed_attempts) + 1
-  const blockedUntil = failedAttempts >= MAX_ATTEMPTS
-    ? now + BLOCK_DURATION
-    : null
-
-  await db.execute(
-    'UPDATE login_attempts SET failed_attempts = ?, blocked_until = ? WHERE ip_address = ?',
-    [failedAttempts, blockedUntil, ip],
-  )
-}
-
-// Clear failed attempts after successful login
-export const clearLoginAttempts = async (ip: string) => {
-  await db.execute(
-    'DELETE FROM login_attempts WHERE ip_address = ?',
-    [ip],
-  )
 }

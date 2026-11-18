@@ -70,14 +70,25 @@ export const loginUser = async (
       body: JSON.stringify(userData),
     })
 
-    const data: LoginResponse & ApiErrorResponse =
+    const data: Partial<LoginResponse> & ApiErrorResponse =
       await response.json().catch(() => ({}))
 
     if (!response.ok) {
       throw new Error(data.message || 'Login failed')
     }
 
-    return data
+    const isValidResponse =
+      typeof data.token === 'string' &&
+      data.token.length > 0 &&
+      typeof data.user?.id === 'number' &&
+      typeof data.user?.name === 'string' &&
+      typeof data.user?.email === 'string'
+
+    if (!isValidResponse) {
+      throw new Error('Invalid login response from server')
+    }
+
+    return data as LoginResponse
   } catch (error) {
     throw new Error(
       error instanceof Error ? error.message : 'Login failed',
