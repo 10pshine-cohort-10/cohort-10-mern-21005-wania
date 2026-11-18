@@ -1,8 +1,8 @@
-
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { RowDataPacket, ResultSetHeader } from 'mysql2'
 import db from '../config/database'
+import JWT_SECRET from '../config/jwtConfig'
 
 // Signup form data
 type SignupData = {
@@ -17,11 +17,22 @@ type LoginData = {
   password: string
 }
 
+// User data returned from MySQL
+type UserRow = RowDataPacket & {
+  id: number
+  name: string
+  email: string
+  password: string
+}
+
+// Used when an email does not exist
+const dummyPasswordHash = bcrypt.hashSync('dummy-password', 10)
+
 // Register a new user
 export const signupUser = async ({ name, email, password }: SignupData) => {
   // Check whether the email is already registered
-  const [existingUsers] = await db.execute<RowDataPacket[]>(
-    'SELECT id FROM users WHERE email = ?',
+  const [existingUsers] = await db.execute<UserRow[]>(
+    'SELECT id, name, email, password FROM users WHERE email = ?',
     [email],
   )
 
@@ -48,28 +59,25 @@ export const signupUser = async ({ name, email, password }: SignupData) => {
 // Log in an existing user
 export const loginUser = async ({ email, password }: LoginData) => {
   // Find the user by email
-  const [users] = await db.execute<RowDataPacket[]>(
+  const [users] = await db.execute<UserRow[]>(
     'SELECT id, name, email, password FROM users WHERE email = ?',
     [email],
   )
 
-  if (users.length === 0) {
-    throw new Error('Invalid email')
-  }
-
   const user = users[0]
 
-  // Check the entered password
-  const isPasswordValid = await bcrypt.compare(password, user.password)
+  // Compare against the real hash or a dummy hash
+  const passwordHash = user?.password ?? dummyPasswordHash
+  const isPasswordValid = await bcrypt.compare(password, passwordHash)
 
-  if (!isPasswordValid) {
-    throw new Error('Password is incorrect')
+  if (!user || !isPasswordValid) {
+    throw new Error('Invalid email or password')
   }
 
   // Create a login token
   const token = jwt.sign(
     { userId: user.id },
-    process.env.JWT_SECRET!,
+    JWT_SECRET,
     { expiresIn: '1d' },
   )
 

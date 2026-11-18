@@ -1,12 +1,8 @@
-
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useMatch } from 'react-router-dom'
 
 function AuthLayout() {
-  // Get the current page URL
-  const location = useLocation()
-
   // Check if the signup page is open
-  const isSignup = location.pathname === '/signup'
+  const isSignup = useMatch('/signup') !== null
 
   return (
     <div className="auth-container">

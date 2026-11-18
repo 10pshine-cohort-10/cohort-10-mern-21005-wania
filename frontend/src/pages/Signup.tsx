@@ -4,11 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { signupUser } from '../services/authService'
 
 function Signup() {
-  // Password visibility
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
-  // Signup error message
   const [error, setError] = useState('')
 
   const navigate = useNavigate()
@@ -18,7 +15,6 @@ function Signup() {
     event.preventDefault()
     setError('')
 
-    // Get values from the form
     const formData = new FormData(event.currentTarget)
 
     const name = String(formData.get('name') || '')
@@ -26,13 +22,11 @@ function Signup() {
     const password = String(formData.get('password') || '')
     const confirmPassword = String(formData.get('confirmPassword') || '')
 
-    // Check whether passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
     }
 
-    // Send signup details to the backend
     try {
       await signupUser({ name, email, password })
       navigate('/login')
@@ -41,7 +35,6 @@ function Signup() {
     }
   }
 
-  // Signup form
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
       {/* Full name field */}
@@ -52,6 +45,7 @@ function Signup() {
           name="name"
           placeholder="Full Name"
           aria-label="Full Name"
+          autoComplete="name"
           required
         />
       </div>
@@ -64,6 +58,7 @@ function Signup() {
           name="email"
           placeholder="Email Address"
           aria-label="Email Address"
+          autoComplete="email"
           required
         />
       </div>
@@ -77,6 +72,7 @@ function Signup() {
             name="password"
             placeholder="Password"
             aria-label="Password"
+            autoComplete="new-password"
             required
           />
 
@@ -100,6 +96,7 @@ function Signup() {
             name="confirmPassword"
             placeholder="Confirm Password"
             aria-label="Confirm Password"
+            autoComplete="new-password"
             required
           />
 

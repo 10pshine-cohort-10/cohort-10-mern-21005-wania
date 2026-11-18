@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import './config/jwtConfig'
 import express from 'express'
 import db from './config/database'
 import authRoutes from './routes/authRoutes'

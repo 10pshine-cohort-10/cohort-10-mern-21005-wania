@@ -1,56 +1,55 @@
-
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { loginUser } from '../services/authService'
 
 function Login() {
-  // Password visibility
   const [showPassword, setShowPassword] = useState(false)
-
-  // Login messages
-  const [emailError, setEmailError] = useState('')
-  const [passwordError, setPasswordError] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Prevent repeated submissions
+  const [isPending, setIsPending] = useState(false)
+  const isSubmitting = useRef(false)
+
+  // Clear old messages when the user edits either field
+  const handleInputChange = () => {
+    setError('')
+    setSuccess('')
+  }
 
   // Handle login form submission
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    setEmailError('')
-    setPasswordError('')
+    if (isSubmitting.current) return
+
+    isSubmitting.current = true
+    setIsPending(true)
+
     setError('')
     setSuccess('')
 
-    // Get values from the form
     const formData = new FormData(event.currentTarget)
 
     const email = String(formData.get('email') || '')
     const password = String(formData.get('password') || '')
 
-    // Send login details to the backend
     try {
       const data = await loginUser({ email, password })
 
-      // Save the login token
       localStorage.setItem('token', data.token)
-
       setSuccess('Login successful')
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Login failed'
 
-      if (message === 'Invalid email') {
-        setEmailError(message)
-      } else if (message === 'Password is incorrect') {
-        setPasswordError(message)
-      } else {
-        setError(message)
-      }
+      setError(message)
+    } finally {
+      isSubmitting.current = false
+      setIsPending(false)
     }
   }
 
-  // Login form
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
       {/* Email field */}
@@ -61,11 +60,10 @@ function Login() {
           name="email"
           placeholder="Email Address"
           aria-label="Email Address"
+          onChange={handleInputChange}
           required
         />
       </div>
-
-      {emailError && <p className="error-message">{emailError}</p>}
 
       {/* Password field */}
       <div className="form-group">
@@ -76,6 +74,7 @@ function Login() {
             name="password"
             placeholder="Password"
             aria-label="Password"
+            onChange={handleInputChange}
             required
           />
 
@@ -90,15 +89,17 @@ function Login() {
         </div>
       </div>
 
-      {passwordError && <p className="error-message">{passwordError}</p>}
-
-      {/* General login messages */}
+      {/* Login messages */}
       {error && <p className="error-message">{error}</p>}
       {success && <p className="success-message">{success}</p>}
 
       {/* Login button */}
-      <button type="submit" className="auth-button">
-        Login
+      <button
+        type="submit"
+        className="auth-button"
+        disabled={isPending}
+      >
+        {isPending ? 'Logging in...' : 'Login'}
       </button>
     </form>
   )

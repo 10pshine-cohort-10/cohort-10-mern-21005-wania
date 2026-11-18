@@ -1,6 +1,6 @@
-
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
+import JWT_SECRET from '../config/jwtConfig'
 
 type TokenPayload = {
   userId: number
@@ -25,7 +25,7 @@ export const authenticateToken = (
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET!,
+      JWT_SECRET,
     ) as TokenPayload
 
     req.userId = decoded.userId
