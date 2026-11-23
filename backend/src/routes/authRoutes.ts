@@ -4,7 +4,6 @@ import { checkLoginAttempts } from '../middleware/loginAttemptMiddleware'
 
 const router = Router()
 
-// Handle user signup and login requests
 router.post('/signup', signup)
 router.post('/login', checkLoginAttempts, login)
 

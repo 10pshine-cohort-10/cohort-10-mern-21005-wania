@@ -4,7 +4,6 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2'
 import db from '../config/database'
 import JWT_SECRET from '../config/jwtConfig'
 
-// Expected authentication errors
 export class AuthError extends Error {
   constructor(message: string) {
     super(message)
@@ -12,20 +11,17 @@ export class AuthError extends Error {
   }
 }
 
-// Signup form data
 type SignupData = {
   name: string
   email: string
   password: string
 }
 
-// Login form data
 type LoginData = {
   email: string
   password: string
 }
 
-// User data returned from MySQL
 type UserRow = RowDataPacket & {
   id: number
   name: string
@@ -33,13 +29,19 @@ type UserRow = RowDataPacket & {
   password: string
 }
 
-// Used when an email does not exist
+const MAX_PASSWORD_BYTES = 72
+
+const isPasswordTooLong = (password: string) =>
+  Buffer.byteLength(password, 'utf8') > MAX_PASSWORD_BYTES
+
 const dummyPasswordHash = bcrypt.hashSync('dummy-password', 10)
 
-// Register a new user
 export const signupUser = async ({ name, email, password }: SignupData) => {
   try {
-    // Check whether the email is already registered
+    if (isPasswordTooLong(password)) {
+      throw new AuthError('Password must not exceed 72 bytes')
+    }
+
     const [existingUsers] = await db.execute<UserRow[]>(
       'SELECT id, name, email, password FROM users WHERE email = ?',
       [email],
@@ -49,10 +51,8 @@ export const signupUser = async ({ name, email, password }: SignupData) => {
       throw new AuthError('Email is already registered')
     }
 
-    // Hash the password before saving it
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Save the new user in the database
     const [result] = await db.execute<ResultSetHeader>(
       'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
       [name, email, hashedPassword],
@@ -68,7 +68,6 @@ export const signupUser = async ({ name, email, password }: SignupData) => {
       throw error
     }
 
-    // Handle duplicate emails when two signups happen together
     if (
       typeof error === 'object' &&
       error !== null &&
@@ -86,10 +85,12 @@ export const signupUser = async ({ name, email, password }: SignupData) => {
   }
 }
 
-// Log in an existing user
 export const loginUser = async ({ email, password }: LoginData) => {
   try {
-    // Find the user by email
+    if (isPasswordTooLong(password)) {
+      throw new AuthError('Password must not exceed 72 bytes')
+    }
+
     const [users] = await db.execute<UserRow[]>(
       'SELECT id, name, email, password FROM users WHERE email = ?',
       [email],
@@ -97,7 +98,6 @@ export const loginUser = async ({ email, password }: LoginData) => {
 
     const user = users[0]
 
-    // Compare against the real hash or a dummy hash
     const passwordHash = user?.password ?? dummyPasswordHash
     const isPasswordValid = await bcrypt.compare(password, passwordHash)
 
@@ -105,7 +105,6 @@ export const loginUser = async ({ email, password }: LoginData) => {
       throw new AuthError('Invalid email or password')
     }
 
-    // Create a login token
     const token = jwt.sign(
       { userId: user.id },
       JWT_SECRET,

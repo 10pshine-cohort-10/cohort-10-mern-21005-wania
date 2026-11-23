@@ -1,6 +1,13 @@
 import { Request, Response } from 'express'
-import { AuthError, signupUser, loginUser } from '../services/authService'
-import { recordFailedLogin } from '../middleware/loginAttemptMiddleware'
+import {
+  AuthError,
+  signupUser,
+  loginUser,
+} from '../services/authService'
+import {
+  recordFailedLogin,
+  releaseLoginReservation,
+} from '../middleware/loginAttemptMiddleware'
 
 type SignupRequest = {
   name?: string
@@ -13,7 +20,14 @@ type LoginRequest = {
   password?: string
 }
 
-// Handle signup requests
+const releaseReservationSafely = async (reservationId: string) => {
+  try {
+    await releaseLoginReservation(reservationId)
+  } catch (error) {
+    console.error('Failed to release login reservation:', error)
+  }
+}
+
 export const signup = async (
   req: Request<{}, {}, SignupRequest>,
   res: Response,
@@ -65,12 +79,26 @@ export const signup = async (
   }
 }
 
-// Handle login requests
 export const login = async (
   req: Request<{}, {}, LoginRequest>,
   res: Response,
 ) => {
+  const reservationId = res.locals.loginReservationId as string | undefined
+  const ip = res.locals.loginAttemptIp as string | undefined
+
+  if (!reservationId || !ip) {
+    if (reservationId) {
+      await releaseReservationSafely(reservationId)
+    }
+
+    return res.status(500).json({
+      message: 'Unable to process login. Please try again.',
+    })
+  }
+
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    await releaseReservationSafely(reservationId)
+
     return res.status(400).json({
       message: 'Invalid request body',
     })
@@ -84,18 +112,20 @@ export const login = async (
     !email.trim() ||
     !password
   ) {
+    await releaseReservationSafely(reservationId)
+
     return res.status(400).json({
       message: 'Email and password are required',
     })
   }
-
-  const ip = req.ip || 'unknown'
 
   try {
     const result = await loginUser({
       email: email.trim(),
       password,
     })
+
+    await releaseReservationSafely(reservationId)
 
     return res.status(200).json({
       message: 'Login successful',
@@ -105,9 +135,10 @@ export const login = async (
     if (error instanceof AuthError) {
       if (error.message === 'Invalid email or password') {
         try {
-          await recordFailedLogin(ip)
+          await recordFailedLogin(ip, reservationId)
         } catch (recordError) {
           console.error('Failed to record login attempt:', recordError)
+          await releaseReservationSafely(reservationId)
 
           return res.status(500).json({
             message: 'Unable to process login. Please try again.',
@@ -119,10 +150,14 @@ export const login = async (
         })
       }
 
+      await releaseReservationSafely(reservationId)
+
       return res.status(400).json({
         message: error.message,
       })
     }
+
+    await releaseReservationSafely(reservationId)
 
     console.error('Login error:', error)
 

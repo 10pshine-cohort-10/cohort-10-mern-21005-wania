@@ -13,7 +13,6 @@ export const authenticateToken = (
 ) => {
   const authHeader = req.headers.authorization
 
-  // Check if the request includes a token
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       message: 'Access denied. Please log in.',
@@ -30,7 +29,7 @@ export const authenticateToken = (
 
     req.userId = decoded.userId
 
-    next()
+    return next()
   } catch {
     return res.status(401).json({
       message: 'Invalid or expired token',
