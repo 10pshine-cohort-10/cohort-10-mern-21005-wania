@@ -1,8 +1,10 @@
 import { useRef, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { loginUser } from '../services/authService'
 
 function Login() {
+  const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -17,7 +19,6 @@ function Login() {
     setSuccess('')
   }
 
-  // Handle login form submission
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -38,7 +39,7 @@ function Login() {
       const data = await loginUser({ email, password })
 
       localStorage.setItem('token', data.token)
-      setSuccess('Login successful')
+      navigate('/dashboard', { replace: true })
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Login failed'
@@ -52,7 +53,6 @@ function Login() {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      {/* Email field */}
       <div className="form-group">
         <input
           type="email"
@@ -65,7 +65,6 @@ function Login() {
         />
       </div>
 
-      {/* Password field */}
       <div className="form-group">
         <div className="password-input-wrapper">
           <input
@@ -89,16 +88,10 @@ function Login() {
         </div>
       </div>
 
-      {/* Login messages */}
       {error && <p className="error-message">{error}</p>}
       {success && <p className="success-message">{success}</p>}
 
-      {/* Login button */}
-      <button
-        type="submit"
-        className="auth-button"
-        disabled={isPending}
-      >
+      <button type="submit" className="auth-button" disabled={isPending}>
         {isPending ? 'Logging in...' : 'Login'}
       </button>
     </form>
