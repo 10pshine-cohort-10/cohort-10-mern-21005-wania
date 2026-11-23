@@ -9,11 +9,9 @@ function Login() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Prevent repeated submissions
   const [isPending, setIsPending] = useState(false)
   const isSubmitting = useRef(false)
 
-  // Clear old messages when the user edits either field
   const handleInputChange = () => {
     setError('')
     setSuccess('')

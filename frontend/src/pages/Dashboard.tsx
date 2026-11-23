@@ -1,3 +1,4 @@
+// Temporary page for testing login redirection
 function Dashboard() {
   return (
     <div className="dashboard">

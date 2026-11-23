@@ -37,7 +37,6 @@ function Signup() {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      {/* Full name field */}
       <div className="form-group">
         <input
           type="text"
@@ -50,7 +49,6 @@ function Signup() {
         />
       </div>
 
-      {/* Email field */}
       <div className="form-group">
         <input
           type="email"
@@ -63,7 +61,6 @@ function Signup() {
         />
       </div>
 
-      {/* Password field */}
       <div className="form-group">
         <div className="password-input-wrapper">
           <input
@@ -87,7 +84,6 @@ function Signup() {
         </div>
       </div>
 
-      {/* Confirm password field */}
       <div className="form-group">
         <div className="password-input-wrapper">
           <input
@@ -111,10 +107,8 @@ function Signup() {
         </div>
       </div>
 
-      {/* Signup error message */}
       {error && <p className="error-message">{error}</p>}
-
-      {/* Signup button */}
+      
       <button type="submit" className="auth-button">
         Signup
       </button>

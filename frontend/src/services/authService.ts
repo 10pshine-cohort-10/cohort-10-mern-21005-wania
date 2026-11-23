@@ -29,7 +29,6 @@ type ApiErrorResponse = {
   message?: string
 }
 
-// Send signup details to the backend
 export const signupUser = async (
   userData: SignupData,
 ): Promise<SignupResponse> => {
@@ -57,7 +56,6 @@ export const signupUser = async (
   }
 }
 
-// Send login details to the backend
 export const loginUser = async (
   userData: LoginData,
 ): Promise<LoginResponse> => {

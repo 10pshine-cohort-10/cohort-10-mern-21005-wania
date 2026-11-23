@@ -1,5 +1,4 @@
-
-/* Center the login and signup form */
+/* Main auth layout */
 .auth-container {
   min-height: 100vh;
   display: flex;
@@ -8,7 +7,7 @@
   padding: 20px;
 }
 
-/* Form card styling */
+/* Login and signup card */
 .auth-card {
   width: 100%;
   max-width: 420px;
@@ -27,7 +26,7 @@
   font-size: 28px;
 }
 
-/* Login and signup tabs */
+/* Tabs and active slider */
 .auth-tabs {
   position: relative;
   display: flex;
@@ -37,7 +36,6 @@
   border-radius: 8px;
 }
 
-/* Slider for the active tab */
 .auth-tab-slider {
   position: absolute;
   top: 5px;
@@ -53,7 +51,6 @@
   transform: translateX(100%);
 }
 
-/* Tab links */
 .auth-tab {
   position: relative;
   z-index: 1;
@@ -69,7 +66,7 @@
   color: white;
 }
 
-/* Form layout */
+/* Form fields */
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -81,7 +78,6 @@
   flex-direction: column;
 }
 
-/* Input fields */
 .form-group input {
   width: 100%;
   padding: 13px;
@@ -95,7 +91,7 @@
   border-color: #2563eb;
 }
 
-/* Password field and eye icon */
+/* Password visibility button */
 .password-input-wrapper {
   position: relative;
   display: flex;
@@ -106,7 +102,6 @@
   padding-right: 45px;
 }
 
-/* Show and hide password button */
 .password-toggle {
   position: absolute;
   right: 12px;
@@ -134,7 +129,7 @@
   text-decoration: underline;
 }
 
-/* Login and signup buttons */
+/* Submit button */
 .auth-button {
   width: 100%;
   padding: 13px;
@@ -150,14 +145,14 @@
   background: #1d4ed8;
 }
 
-/* Card padding on small screens */
+/* Mobile layout */
 @media (max-width: 480px) {
   .auth-card {
     padding: 25px 20px;
   }
 }
 
-/* Form error message */
+/* Error and success messages */
 .error-message {
   margin: -8px 0 0;
   color: #dc2626;
@@ -165,7 +160,6 @@
   text-align: left;
 }
 
-/* Successful login message */
 .success-message {
   margin: -8px 0 0;
   color: #16a34a;

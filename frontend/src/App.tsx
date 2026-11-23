@@ -15,7 +15,6 @@ function App() {
           <Route path="/signup" element={<Signup />} />
         </Route>
 
-        {/* Only logged in users can open the dashboard */}
         <Route
           path="/dashboard"
           element={
