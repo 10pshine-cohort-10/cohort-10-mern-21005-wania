@@ -1,0 +1,21 @@
+
+/* All elements */
+* {
+  box-sizing: border-box;
+}
+
+/* Body styles */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+  color: #222;
+}
+
+/* Button and input fonts */
+button,
+input {
+  font-family: inherit;
+}
