@@ -1,3 +1,4 @@
+
 import { Request, Response } from 'express'
 import {
   AuthError,
@@ -7,6 +8,7 @@ import {
 import {
   recordFailedLogin,
   releaseLoginReservation,
+  LoginReservationLocals,
 } from '../middleware/loginAttemptMiddleware'
 
 type SignupRequest = {
@@ -21,10 +23,35 @@ type LoginRequest = {
 }
 
 const releaseReservationSafely = async (reservationId: string) => {
-  try {
-    await releaseLoginReservation(reservationId)
-  } catch (error) {
-    console.error('Failed to release login reservation:', error)
+  const maxRetries = 3
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await releaseLoginReservation(reservationId)
+      return
+    } catch (error) {
+      const isRetryable =
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        typeof error.code === 'string' &&
+        [
+          'ER_LOCK_DEADLOCK',
+          'ER_LOCK_WAIT_TIMEOUT',
+          'PROTOCOL_CONNECTION_LOST',
+          'ECONNRESET',
+          'ETIMEDOUT',
+        ].includes(error.code)
+
+      if (!isRetryable || attempt === maxRetries) {
+        console.error('Failed to release login reservation:', error)
+        return
+      }
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, attempt * 100),
+      )
+    }
   }
 }
 
@@ -81,10 +108,10 @@ export const signup = async (
 
 export const login = async (
   req: Request<{}, {}, LoginRequest>,
-  res: Response,
+  res: Response<unknown, LoginReservationLocals>,
 ) => {
-  const reservationId = res.locals.loginReservationId as string | undefined
-  const ip = res.locals.loginAttemptIp as string | undefined
+  const reservationId = res.locals.loginReservationId
+  const ip = res.locals.loginAttemptIp
 
   if (!reservationId || !ip) {
     if (reservationId) {

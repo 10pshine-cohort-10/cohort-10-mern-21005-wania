@@ -19,6 +19,11 @@ type LoginCheckResult = {
   reservationId?: string
 }
 
+export type LoginReservationLocals = {
+  loginReservationId?: string
+  loginAttemptIp?: string
+}
+
 const MAX_ATTEMPTS = 5
 const ATTEMPT_WINDOW = 15 * 60 * 1000
 const BLOCK_DURATION = 15 * 60 * 1000
@@ -39,9 +44,11 @@ const withTransaction = async <T>(
   operation: (connection: PoolConnection) => Promise<T>,
 ): Promise<T> => {
   for (let attempt = 1; attempt <= MAX_TRANSACTION_RETRIES; attempt++) {
-    const connection = await db.getConnection()
+    let connection: PoolConnection | undefined
+    let shouldRetry = false
 
     try {
+      connection = await db.getConnection()
       await connection.beginTransaction()
 
       const result = await operation(connection)
@@ -50,18 +57,24 @@ const withTransaction = async <T>(
 
       return result
     } catch (error) {
-      try {
-        await connection.rollback()
-      } catch {
+      if (connection) {
+        try {
+          await connection.rollback()
+        } catch {
+        }
       }
 
       if (!isRetryableError(error) || attempt === MAX_TRANSACTION_RETRIES) {
         throw error
       }
 
-      await new Promise((resolve) => setTimeout(resolve, attempt * 100))
+      shouldRetry = true
     } finally {
-      connection.release()
+      connection?.release()
+    }
+
+    if (shouldRetry) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 100))
     }
   }
 
@@ -70,11 +83,10 @@ const withTransaction = async <T>(
 
 export const checkLoginAttempts = async (
   req: Request,
-  res: Response,
+  res: Response<unknown, LoginReservationLocals>,
   next: NextFunction,
 ) => {
   const ip = req.ip || 'unknown'
-  const now = Date.now()
 
   try {
     const result = await withTransaction<LoginCheckResult>(
@@ -83,7 +95,7 @@ export const checkLoginAttempts = async (
           `INSERT IGNORE INTO login_attempts
            (ip_address, failed_attempts, first_attempt_at, blocked_until)
            VALUES (?, 0, ?, NULL)`,
-          [ip, now],
+          [ip, Date.now()],
         )
 
         const [rows] = await connection.execute<LoginAttemptRow[]>(
@@ -94,6 +106,7 @@ export const checkLoginAttempts = async (
           [ip],
         )
 
+        const now = Date.now()
         const attempt = rows[0]
         let failedAttempts = Number(attempt.failed_attempts)
 
@@ -186,15 +199,11 @@ export const recordFailedLogin = async (
   reservationId: string,
 ) => {
   await withTransaction(async (connection) => {
-    const now = Date.now()
-    const windowStart = now - ATTEMPT_WINDOW
-    const blockedUntil = now + BLOCK_DURATION
-
     await connection.execute(
       `INSERT IGNORE INTO login_attempts
        (ip_address, failed_attempts, first_attempt_at, blocked_until)
        VALUES (?, 0, ?, NULL)`,
-      [ip, now],
+      [ip, Date.now()],
     )
 
     const [rows] = await connection.execute<LoginAttemptRow[]>(
@@ -205,6 +214,9 @@ export const recordFailedLogin = async (
       [ip],
     )
 
+    const now = Date.now()
+    const windowStart = now - ATTEMPT_WINDOW
+    const blockedUntil = now + BLOCK_DURATION
     const attempt = rows[0]
 
     let failedAttempts = Number(attempt.failed_attempts)
