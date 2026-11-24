@@ -4,7 +4,7 @@
 
 1. Create a MySQL database named `notes_app`.
 2. Open the `database/schema.sql` file.
-3. Run the SQL commands to create the login attempt tables.
+3. Run the SQL script to create the users and login-attempt tables.
 
 ## Run Backend
 
