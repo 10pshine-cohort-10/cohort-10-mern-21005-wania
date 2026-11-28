@@ -5,6 +5,14 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import './App.css'
 
+function ProtectedRoute() {
+  return localStorage.getItem('token') ? (
+    <Dashboard />
+  ) : (
+    <Navigate to="/login" replace />
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -15,16 +23,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
         </Route>
 
-        <Route
-          path="/dashboard"
-          element={
-            localStorage.getItem('token') ? (
-              <Dashboard />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+        <Route path="/dashboard" element={<ProtectedRoute />} />
       </Routes>
     </BrowserRouter>
   )

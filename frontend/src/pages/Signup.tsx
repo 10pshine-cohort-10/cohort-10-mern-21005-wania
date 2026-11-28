@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { signupUser } from '../services/authService'
@@ -7,12 +7,16 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
+  const [isPending, setIsPending] = useState(false)
 
+  const isSubmitting = useRef(false)
   const navigate = useNavigate()
 
-  // Handle signup form submission
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (isSubmitting.current) return
+
     setError('')
 
     const formData = new FormData(event.currentTarget)
@@ -27,11 +31,17 @@ function Signup() {
       return
     }
 
+    isSubmitting.current = true
+    setIsPending(true)
+
     try {
       await signupUser({ name, email, password })
       navigate('/login')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Signup failed')
+    } finally {
+      isSubmitting.current = false
+      setIsPending(false)
     }
   }
 
@@ -108,9 +118,9 @@ function Signup() {
       </div>
 
       {error && <p className="error-message">{error}</p>}
-      
-      <button type="submit" className="auth-button">
-        Signup
+
+      <button type="submit" className="auth-button" disabled={isPending}>
+        {isPending ? 'Creating account...' : 'Signup'}
       </button>
     </form>
   )
