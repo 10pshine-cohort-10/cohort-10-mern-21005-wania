@@ -35,7 +35,7 @@ function Login() {
 
     try {
       const data = await loginUser({ email, password })
-
+      
       localStorage.setItem('token', data.token)
       navigate('/dashboard', { replace: true })
     } catch (error) {
